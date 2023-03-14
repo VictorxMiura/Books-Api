@@ -1,10 +1,8 @@
 package com.miura.booksapi.controllers;
 
-import com.miura.booksapi.models.Book;
-import com.miura.booksapi.models.CreateBookRequest;
-import com.miura.booksapi.models.UpdateBookRequest;
+import com.miura.booksapi.models.*;
+import com.miura.booksapi.repositories.AuthorRepository;
 import com.miura.booksapi.repositories.BooksRepository;
-import org.hibernate.sql.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +15,10 @@ import java.util.UUID;
 public class BooksController {
 
     private final BooksRepository booksRepository;
-
-    public BooksController(final BooksRepository booksRepository) {
+    private final AuthorRepository authorRepository;
+    public BooksController(final BooksRepository booksRepository, final AuthorRepository authorRepository) {
         this.booksRepository = booksRepository;
+        this.authorRepository = authorRepository;
     }
 
     @GetMapping
@@ -41,23 +40,30 @@ public class BooksController {
     }
 
     @PostMapping
-    public Book createBook (@RequestBody CreateBookRequest request){
+    public ResponseEntity<Object> createBook (@RequestBody CreateBookRequest request){
+        Optional<Author> existingAuthor = authorRepository.findById(request.getAuthorId());
+
+
+        if (existingAuthor.isEmpty()) {
+            return ResponseEntity.badRequest().body("AUTHOR NOT FOUND");
+        }
+
 
         Book book = new Book(
                 null,
                 request.getTitle(),
                 request.getDescription(),
-                request.getAuthor()
+                existingAuthor.get()
         );
 
-        return booksRepository.save(book);
+        return ResponseEntity.ok(booksRepository.save(book));
     }
 
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateBook(
             @PathVariable UUID id,
-            @RequestBody UpdateBookRequest request
+            @RequestBody UpdateBookRequest request, UpdateAuthorRequest arequest
     ) {
         Optional<Book> existingBook = booksRepository.findById(id.toString());
 
@@ -67,7 +73,15 @@ public class BooksController {
 
         Book bookToUpdate = existingBook.get();
 
-        bookToUpdate.setAuthor(request.getAuthor());
+        Optional<Author> existingAuthor = authorRepository.findById(id.toString());
+
+//        if (existingAuthor.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+
+        Author authorToUpdate = existingAuthor.get();
+
+        authorToUpdate.setId(request.getAuthorId());
         bookToUpdate.setDescription(request.getDescription());
         bookToUpdate.setTitle(request.getTitle());
 

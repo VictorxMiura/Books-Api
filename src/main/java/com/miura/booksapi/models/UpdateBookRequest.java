@@ -10,5 +10,8 @@ import lombok.NoArgsConstructor;
 public class UpdateBookRequest {
     private String title;
     private String description;
-    private String author;
+    private String authorId;
+
+
+
 }
