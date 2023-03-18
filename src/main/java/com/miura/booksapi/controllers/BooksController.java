@@ -1,10 +1,8 @@
 package com.miura.booksapi.controllers;
 
-import com.miura.booksapi.models.Book;
-import com.miura.booksapi.models.CreateBookRequest;
-import com.miura.booksapi.models.UpdateBookRequest;
+import com.miura.booksapi.models.*;
+import com.miura.booksapi.repositories.AuthorRepository;
 import com.miura.booksapi.repositories.BooksRepository;
-import org.hibernate.sql.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,16 +15,19 @@ import java.util.UUID;
 public class BooksController {
 
     private final BooksRepository booksRepository;
-
-    public BooksController(final BooksRepository booksRepository) {
+    private final AuthorRepository authorRepository;
+    public BooksController(final BooksRepository booksRepository, final AuthorRepository authorRepository) {
         this.booksRepository = booksRepository;
+        this.authorRepository = authorRepository;
     }
 
+    // Metodo achar todos os livros
     @GetMapping
     public List<Book> getBooks() {
         return booksRepository.findAll();
     }
 
+    // Metodo achar um livro pelo ID
     @GetMapping("/{id}")
     public ResponseEntity<Object> getBookId (
             @PathVariable UUID id
@@ -40,40 +41,51 @@ public class BooksController {
         return ResponseEntity.ok(existingBook.get());
     }
 
+    // Metodo para adicionar um livro
     @PostMapping
-    public Book createBook (@RequestBody CreateBookRequest request){
+    public ResponseEntity<Object> createBook (@RequestBody CreateBookRequest request){
+        Optional<Author> existingAuthor = authorRepository.findById(request.getAuthorId());
+
+
+        if (existingAuthor.isEmpty()) {
+            return ResponseEntity.badRequest().body("AUTHOR NOT FOUND");
+        }
+
 
         Book book = new Book(
                 null,
                 request.getTitle(),
                 request.getDescription(),
-                request.getAuthor()
+                existingAuthor.get()
         );
 
-        return booksRepository.save(book);
+        return ResponseEntity.ok(booksRepository.save(book));
     }
 
 
+    // Metodo para alterar um livro pelo ID
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateBook(
             @PathVariable UUID id,
             @RequestBody UpdateBookRequest request
     ) {
         Optional<Book> existingBook = booksRepository.findById(id.toString());
+        Optional<Author> existingAuthor = authorRepository.findById(request.getAuthorId());
 
-        if (existingBook.isEmpty()) {
+        if (existingBook.isEmpty() || existingAuthor.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+       Book bookToUpdate = existingBook.get();
+       Author authorToUpdate = existingAuthor.get();
 
-        Book bookToUpdate = existingBook.get();
-
-        bookToUpdate.setAuthor(request.getAuthor());
+        bookToUpdate.setAuthor(authorToUpdate);
         bookToUpdate.setDescription(request.getDescription());
         bookToUpdate.setTitle(request.getTitle());
 
         return ResponseEntity.ok(booksRepository.save(bookToUpdate));
     }
 
+    // Metodo para deletar um livro pelo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteBook(
             @PathVariable UUID id
