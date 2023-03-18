@@ -21,11 +21,13 @@ public class BooksController {
         this.authorRepository = authorRepository;
     }
 
+    // Metodo achar todos os livros
     @GetMapping
     public List<Book> getBooks() {
         return booksRepository.findAll();
     }
 
+    // Metodo achar um livro pelo ID
     @GetMapping("/{id}")
     public ResponseEntity<Object> getBookId (
             @PathVariable UUID id
@@ -39,6 +41,7 @@ public class BooksController {
         return ResponseEntity.ok(existingBook.get());
     }
 
+    // Metodo para adicionar um livro
     @PostMapping
     public ResponseEntity<Object> createBook (@RequestBody CreateBookRequest request){
         Optional<Author> existingAuthor = authorRepository.findById(request.getAuthorId());
@@ -60,6 +63,7 @@ public class BooksController {
     }
 
 
+    // Metodo para alterar um livro pelo ID
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateBook(
             @PathVariable UUID id,
@@ -81,6 +85,7 @@ public class BooksController {
         return ResponseEntity.ok(booksRepository.save(bookToUpdate));
     }
 
+    // Metodo para deletar um livro pelo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteBook(
             @PathVariable UUID id
