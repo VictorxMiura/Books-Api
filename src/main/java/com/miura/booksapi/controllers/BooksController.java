@@ -63,25 +63,18 @@ public class BooksController {
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateBook(
             @PathVariable UUID id,
-            @RequestBody UpdateBookRequest request, UpdateAuthorRequest arequest
+            @RequestBody UpdateBookRequest request
     ) {
         Optional<Book> existingBook = booksRepository.findById(id.toString());
+        Optional<Author> existingAuthor = authorRepository.findById(request.getAuthorId());
 
-        if (existingBook.isEmpty()) {
+        if (existingBook.isEmpty() || existingAuthor.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+       Book bookToUpdate = existingBook.get();
+       Author authorToUpdate = existingAuthor.get();
 
-        Book bookToUpdate = existingBook.get();
-
-        Optional<Author> existingAuthor = authorRepository.findById(id.toString());
-
-//        if (existingAuthor.isEmpty()) {
-//            return ResponseEntity.notFound().build();
-//        }
-
-        Author authorToUpdate = existingAuthor.get();
-
-        authorToUpdate.setId(request.getAuthorId());
+        bookToUpdate.setAuthor(authorToUpdate);
         bookToUpdate.setDescription(request.getDescription());
         bookToUpdate.setTitle(request.getTitle());
 
